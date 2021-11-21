@@ -83,7 +83,7 @@ class Pokemon:
         print("Catched Successfully")
     @staticmethod
     def is_json_file_modified_one_day_ago():
-        path=r"C:\Users\maral\PycharmProjects\PokemonChallenge\pokemon api challenge\data.json"
+        path=r"data.json"
         time_modified_float=os.path.getmtime(path)
         modified_time=time.ctime(time_modified_float)
         time_obj = time.strptime(modified_time)
