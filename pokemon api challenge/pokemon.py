@@ -13,28 +13,39 @@ class Pokemon:
         self.pokemon_dict={'name':name,'id':id}
     def query_pokemon_api_with_name(self):
         reponse=requests.get(f'{self.pokemon_api}{self.name}').json()
-        pokemon=Pokemon(reponse['name'],reponse['id'])
-        self.pokemon_dict=pokemon.pokemon_dict
+        pokemon=Pokemon(None,None)
+        if len(reponse)>0:
+            pokemon=Pokemon(reponse['name'],reponse['id'])
+            self.pokemon_dict=pokemon.pokemon_dict
         return pokemon
     def query_pokemon_api_with_id(self):
-        reponse = requests.get(f'{self.pokemon_api}{self.id}').json()
-        pokemon = Pokemon(reponse['name'], reponse['id'])
-        self.pokemon_dict = pokemon.pokemon_dict
+        response = requests.get(f'{self.pokemon_api}{self.id}').json()
+        pokemon=Pokemon(None,None)
+        if len(response)>0:
+            pokemon = Pokemon(response['name'], response['id'])
+            self.pokemon_dict = pokemon.pokemon_dict
         return pokemon
     def query_catched_pokemon_with_name(self):
-        f = open('data.json', )
-        pokemons = json.load(f)
-        f.close()
-        for key, value in pokemons.items():
-            if (pokemons[key]['name'] == self.name):
-                return pokemons[key]
+        if Pokemon.check_catched_data_exist():
+            f = open('data.json', )
+            pokemons = json.load(f)
+            f.close()
+            for key, value in pokemons.items():
+                if (pokemons[key]['name'] == self.name):
+                    return pokemons[key]
+                else:
+                    return None
+
     def query_catched_pokemon_with_id(self):
-        f = open('data.json', )
-        pokemons = json.load(f)
-        f.close()
-        for key, value in pokemons.items():
-            if (pokemons[key]['id'] == self.id):
-                return pokemons[key]
+        if Pokemon.check_catched_data_exist():
+            f = open('data.json', )
+            pokemons = json.load(f)
+            f.close()
+            for key, value in pokemons.items():
+                if (pokemons[key]['id'] == self.id):
+                    return pokemons[key]
+                else:
+                    return None
     def find_pokemon_encounters(self):
             if self.name != None:
                 pokemon = self.query_pokemon_api_with_name()
@@ -58,14 +69,22 @@ class Pokemon:
                 return loc, method
     def retrieve_pokemon_detail(self):
         if Pokemon.is_json_file_modified_one_day_ago():
-            loc,method=self.find_pokemon_encounters()
-            self.pokemon_dict.update({'counter method':method,'location':loc})
-            return self.pokemon_dict
+            return self.retrieve_pokemon_based_on_api()
         else:
             if self.name != None:
-                return self.query_catched_pokemon_with_name()
+                result=self.query_catched_pokemon_with_name()
+                if result==None:
+                    result= self.retrieve_pokemon_based_on_api()
+                return result
             elif self.id !=None:
-                return self.query_catched_pokemon_with_id()
+                result=self.query_catched_pokemon_with_id()
+                if result==None:
+                    result=self.retrieve_pokemon_based_on_api()
+                return result
+    def retrieve_pokemon_based_on_api(self):
+        loc, method = self.find_pokemon_encounters()
+        self.pokemon_dict.update({'counter method': method, 'location': loc})
+        return self.pokemon_dict
     @classmethod
     def catche_all_pokemon(cls):
         pokemon_json_api = requests.get(cls.pokemon_api).json()
@@ -83,16 +102,19 @@ class Pokemon:
         print("Catched Successfully")
     @staticmethod
     def is_json_file_modified_one_day_ago():
-        path=r"data.json"
-        time_modified_float=os.path.getmtime(path)
-        modified_time=time.ctime(time_modified_float)
-        time_obj = time.strptime(modified_time)
-        modified_timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time_obj)
-        modified_timestamp_to_datetime=datetime.strptime(modified_timestamp,"%Y-%m-%d %H:%M:%S")
-        diff=datetime.now()-modified_timestamp_to_datetime
-        hours_diff = divmod(diff.seconds, 3600)
-        return hours_diff[0]>=24
-
-
+        if Pokemon.check_catched_data_exist():
+            path=r"data.json"
+            time_modified_float=os.path.getmtime(path)
+            modified_time=time.ctime(time_modified_float)
+            time_obj = time.strptime(modified_time)
+            modified_timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time_obj)
+            modified_timestamp_to_datetime=datetime.strptime(modified_timestamp,"%Y-%m-%d %H:%M:%S")
+            diff=datetime.now()-modified_timestamp_to_datetime
+            hours_diff = divmod(diff.seconds, 3600)
+            return hours_diff[0]>=24
+        return Pokemon.check_catched_data_exist()
+    @staticmethod
+    def check_catched_data_exist():
+        return os.path.isfile(r"data.json")
 
 
